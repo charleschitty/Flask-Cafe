@@ -5,7 +5,14 @@
 {% block content %}
 
 <h1 class="mb-4">Edit CafeName </h1>
+  <form method="POST" id="edit_cafe_form">
 
-<!-- form goes here -->>
+    {% include '_form.html' %}
 
+    <div class="edit-btn-area">
+      <button class="btn btn-success">Edit this user!</button>
+      <a href="/cafes/{{ cafe.id }}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+
+  </form>
 {% endblock %}

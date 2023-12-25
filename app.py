@@ -2,10 +2,11 @@
 
 import os
 
-from flask import Flask, render_template
+from flask import Flask, render_template, flash, redirect
 from flask_debugtoolbar import DebugToolbarExtension
 
-from models import connect_db, Cafe
+from models import connect_db, Cafe, db, City
+from forms import CafeForm
 
 
 app = Flask(__name__)
@@ -87,3 +88,62 @@ def cafe_detail(cafe_id):
         'cafe/detail.html',
         cafe=cafe,
     )
+
+@app.route('/cafes/add', methods=["GET", "POST"])
+def add_cafe():
+    """Handle add-cafe form:
+
+    - if form not filled out or invalid: show form
+    - if valid: add cafe to SQLA and redirect to cafe detail page
+    """
+
+    form = CafeForm()
+
+    city_codes = [
+        (c.code, c.state)
+        for c in db.session.query(City.code, City.state).all()]
+
+
+    form.city_code.choices = city_codes
+
+    if form.validate_on_submit():
+        new_cafe = Cafe(form.populate_obj())
+        db.session.add(new_cafe)
+        db.session.commit()
+
+        flash(f"{new_cafe.name.upper()} added")
+
+        return redirect(f"/cafes/{new_cafe.id}")
+
+    else:
+        return render_template("/cafe/add-form.html", form=form)
+
+
+@app.route('/cafes/<int:cafe_id>/edit', methods=["GET", "POST"])
+def edit_cafe(cafe_id):
+    """Handle edit-cafe form:
+
+    - if form not filled out or invalid: show form
+    - if valid: edit cafe in SQLA and redirect to cafe detail page
+    """
+
+    cafe = Cafe.query.get_or_404(cafe_id)
+    form = CafeForm()
+
+    city_codes = [
+        (c.code, c.state)
+        for c in db.session.query(City.code, City.state).all()]
+
+    form.city_code.choices = city_codes
+
+    if form.validate_on_submit():
+        form.populate_obj(cafe)
+        db.session.add(cafe)
+        db.session.commit()
+
+        flash(f"{cafe.name.upper()} edited")
+
+        return redirect(f"/cafes/{cafe.id}")
+
+    else:
+        return render_template("/cafe/edit-form.html", form=form, cafe=cafe)
